@@ -1,0 +1,3 @@
+employee:
+  path: /employee/ping
+  controller: App\Controller\EmployeeController::pingAction

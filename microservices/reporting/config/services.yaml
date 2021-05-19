@@ -1,0 +1,90 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
+parameters:
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: false      # Automatically injects dependencies in your services.
+        autoconfigure: false # Automatically registers your services as commands, event subscribers, etc.
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+            - '../src/Tests/'
+
+    # controllers are imported separately to make sure services can be injected
+    # as action arguments even if you don't extend any base controller class
+    App\Controller\:
+        resource: '../src/Controller/'
+        tags: ['controller.service_arguments']
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+
+
+    app.reporting.employee.consumer:
+        class: App\Consumer\ReportingEmployeeConsumer
+        arguments:
+            - '@logger'
+            - '@serializer'
+            - '@app.manager.employee_manager'
+            - '@old_sound_rabbit_mq.daily_workhour_calculation_producer'
+
+    app.reporting.registration.consumer:
+        class: App\Consumer\ReportingRegistrationConsumer
+        arguments:
+            - '@logger'
+            - '@serializer'
+            - '@app.manager.registration_manager'
+            - '@old_sound_rabbit_mq.daily_workhour_calculation_producer'
+
+    app.daily.workhour.calculation.consumer:
+        class: App\Consumer\DailyWorkhourCalculationConsumer
+        arguments:
+            - '@logger'
+            - '@serializer'
+            - '@app.manager.daily_workhour_calculation_manager'
+            - '@app.daily.workhour.calculation.with.day.handler'
+            - '@app.daily.workhour.calculation.without.day.handler'
+
+    app.daily.workhour.calculation.handler.abstact:
+        abstract: true
+        arguments:
+            - '@app.manager.registration_manager'
+            - '@app.manager.daily_workhour_calculation_manager'
+            - '@app.manager.employee_manager'
+            - '@logger'
+
+    app.daily.workhour.calculation.with.day.handler:
+        parent: app.daily.workhour.calculation.handler.abstact
+        class: App\Handler\DailyWorkhourCalculationWithDayHandler
+
+    app.daily.workhour.calculation.without.day.handler:
+        parent: app.daily.workhour.calculation.handler.abstact
+        class: App\Handler\DailyWorkhourCalculationWithoutDayHandler
+
+    app.manager.abstract_entity_manager:
+        abstract: true
+        arguments:
+            - '@doctrine.orm.entity_manager'
+
+    app.manager.employee_manager:
+        class: App\Manager\EmployeeManager
+        parent: app.manager.abstract_entity_manager
+
+    app.manager.daily_workhour_calculation_manager:
+        class: App\Manager\DailyWorkhourCalculationManager
+        parent: app.manager.abstract_entity_manager
+
+    app.manager.registration_manager:
+        class: App\Manager\RegistrationManager
+        parent: app.manager.abstract_entity_manager
