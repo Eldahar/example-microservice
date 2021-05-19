@@ -1,0 +1,37 @@
+old_sound_rabbit_mq:
+    connections:
+        default:
+            url: '%env(RABBITMQ_URL)%'
+    producers:
+        daily_workhour_calculation:
+            connection: default
+            exchange_options: { name: 'daily_workhour_calculation', type: direct }
+            queue_options:
+                name: 'daily_workhour_calculation'
+                routing_keys:
+                    - 'daily_workhour_calculation'
+    consumers:
+        reporting_employee:
+            connection:       default
+            exchange_options: { name: 'reporting_employee', type: direct }
+            queue_options:
+                name: 'reporting_employee'
+                routing_keys:
+                    - 'reporting_employee'
+            callback: app.reporting.employee.consumer
+        daily_workhour_calculation:
+            connection: default
+            exchange_options: { name: 'daily_workhour_calculation', type: direct }
+            queue_options:
+                name: 'daily_workhour_calculation'
+                routing_keys:
+                    - 'daily_workhour_calculation'
+            callback: app.daily.workhour.calculation.consumer
+        reporting_registration:
+            connection: default
+            exchange_options: { name: 'reporting_registration', type: direct }
+            queue_options:
+                name: 'reporting_registration'
+                routing_keys:
+                    - 'reporting_registration'
+            callback: app.reporting.registration.consumer

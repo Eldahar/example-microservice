@@ -1,0 +1,22 @@
+old_sound_rabbit_mq:
+    connections:
+        default:
+            url: '%env(RABBITMQ_URL)%'
+    producers:
+        workhour_registration:
+            connection:       default
+            exchange_options: { name: 'workhour_registration', type: direct }
+            queue_options:
+                name: 'workhour_registration'
+                routing_keys:
+                    - 'workhour_registration'
+#    consumers:
+#        hrbase_employee:
+#            connection:       default
+#            exchange_options: { name: 'hrbase_employee', type: direct }
+#    consumers:
+#        task:
+#            connection:       default
+#            exchange_options: { name: 'task', type: direct }
+#            queue_options:    { name: 'task'}
+#            callback:         App\Consumer\TaskConsumer

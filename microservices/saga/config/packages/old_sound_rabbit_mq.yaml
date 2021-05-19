@@ -1,0 +1,37 @@
+old_sound_rabbit_mq:
+    connections:
+        default:
+            url: '%env(RABBITMQ_URL)%'
+    producers:
+        reporting_employee:
+            connection: default
+            exchange_options: { name: 'reporting_employee', type: direct }
+            queue_options:
+                name: 'reporting_employee'
+                routing_keys:
+                    - 'reporting_employee'
+        reporting_registration:
+            connection: default
+            exchange_options: { name: 'reporting_registration', type: direct }
+            queue_options:
+                name: 'reporting_registration'
+                routing_keys:
+                    - 'reporting_registration'
+    consumers:
+        hrbase_employee:
+            connection:       default
+            exchange_options: { name: 'hrbase_employee', type: direct }
+            queue_options:
+                name: 'hrbase_employee'
+                routing_keys:
+                    - 'hrbase_employee'
+            callback: app.hrbase.employee.consumer
+        workhour_registration:
+            connection: default
+            exchange_options: { name: 'workhour_registration', type: direct }
+            queue_options:
+                name: 'workhour_registration'
+                routing_keys:
+                    - 'workhour_registration'
+            callback: app.workhour.registration.consumer
+

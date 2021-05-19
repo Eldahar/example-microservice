@@ -1,0 +1,72 @@
+version: "3.8"
+
+volumes:
+  mysql-config-dir:
+    driver: local
+    driver_opts:
+      type: none
+      device: $HOME/projects/example-microservice/docker/mysql/config/etc/mysql/conf.d
+      o: bind
+  sql-data-dir:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${HOME}/projects/data/mysql-example-microservice
+      o: bind
+  sql-log-dir:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${HOME}/projects/logs/mysql-example-microservice
+      o: bind
+
+
+services:
+  employee:
+    image: eldahar/microservice-api
+    volumes:
+    - ${PWD}/microservices/employee:/srv
+    environment:
+      RABBITMQ_URL: 'amqp://microservices:testpass@rabbitmq:5672/microservices?lazy=1&connection_timeout=6'
+  registration:
+    image: eldahar/microservice-api
+    volumes:
+      - ${PWD}/microservices/registration:/srv
+    environment:
+      RABBITMQ_URL: 'amqp://microservices:testpass@rabbitmq:5672/microservices?lazy=1&connection_timeout=6'
+  saga:
+    image: eldahar/microservice-cli
+    volumes:
+      - ${PWD}/microservices/saga:/srv
+      - ${PWD}/docker/saga/etc/supervisor/conf.d:/etc/supervisor/conf.d
+    environment:
+      RABBITMQ_URL: 'amqp://microservices:testpass@rabbitmq:5672/microservices?lazy=1&connection_timeout=6'
+    command: /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
+  reporting:
+    image: eldahar/microservice-cli
+    volumes:
+      - ${PWD}/microservices/reporting:/srv
+      - ${PWD}/docker/reporting/etc/supervisor/conf.d:/etc/supervisor/conf.d
+    environment:
+      RABBITMQ_URL: 'amqp://microservices:testpass@rabbitmq:5672/microservices?lazy=1&connection_timeout=6'
+    command: /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: "testpass"
+    volumes:
+      - sql-data-dir:/var/lib/mysql
+      - mysql-config-dir:/etc/mysql/conf.d
+      - sql-log-dir:/var/log/mysql
+    cap_add:
+      - SYS_NICE
+
+  rabbitmq:
+    image: rabbitmq:3.8-management
+    ports:
+    - 15672:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: 'microservices'
+      RABBITMQ_DEFAULT_PASS: 'testpass'
+      RABBITMQ_DEFAULT_VHOST: 'microservices'
